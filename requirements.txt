@@ -2,3 +2,4 @@ requests
 playwright
 gspread
 google-auth
+python-dotenv
