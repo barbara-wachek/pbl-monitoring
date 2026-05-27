@@ -39,7 +39,9 @@ def run():
     search_ok = True
     screenshot_path = None
 
+    # ======================
     # SEARCH TEST
+    # ======================
     try:
         search_ok, _ = test_search_tokarczuk()
     except Exception as e:
@@ -48,21 +50,29 @@ def run():
 
     overall_ok = ok and search_ok
 
-    # SCREENSHOT tylko przy błędzie
+    # ======================
+    # SCREENSHOT (only error)
+    # ======================
     if not overall_ok:
         try:
             screenshot_path = take_screenshot()
+            logging.info(f"Screenshot saved: {screenshot_path}")
         except Exception as e:
             logging.error(f"Screenshot failed: {e}")
+            screenshot_path = None
 
     # ======================
-    # GOOGLE SHEETS LOG
+    # GOOGLE SHEETS
     # ======================
-    append_log(
-        overall_ok,
-        search_ok,
-        str(info)
-    )
+    try:
+        append_log(
+            timestamp,
+            overall_ok,
+            search_ok,
+            str(info)
+        )
+    except Exception as e:
+        logging.error(f"Sheets logging failed: {e}")
 
     # ======================
     # EMAIL
@@ -91,19 +101,15 @@ def run():
         )
 
         logging.error("ERROR - system failure")
-        send_email(subject, body, attachment_path=screenshot_path)
+
+        send_email(
+            subject,
+            body,
+            attachment_path=screenshot_path if screenshot_path else None
+        )
 
     print("SITE CHECK DONE")
-    
-    
-    
+
+
 if __name__ == "__main__":
     run()
-    
-    
-    
-    
-    
-    
-    
-    
