@@ -1,0 +1,28 @@
+name: PBL Monitoring
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # 07:00 Polska (UTC+2 / UTC+1 zależnie od czasu)
+  workflow_dispatch:
+
+jobs:
+  run-monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install playwright
+          playwright install
+
+      - name: Run monitor
+        run: python monitor.py
