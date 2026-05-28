@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from config import SCREENSHOT_DIR
 
@@ -39,7 +40,7 @@ def test_search_tokarczuk():
 
     os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d_%H-%M-%S")
 
     screenshot_path = os.path.join(
         SCREENSHOT_DIR,

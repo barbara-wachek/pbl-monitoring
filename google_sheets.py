@@ -1,6 +1,7 @@
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from config import (
     GOOGLE_CREDENTIALS,
@@ -44,7 +45,7 @@ def ensure_headers(sheet):
 def append_log(site_ok, search_ok, info):
 
     try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d_%H-%M-%S")
 
         sheet = get_sheet()
         ensure_headers(sheet)
