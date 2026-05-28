@@ -23,7 +23,7 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 GOOGLE_SHEET_ID = "1-lqkngW5dvekVcddgo9ocZp8OGMDufNVPF7vDL19sW8"
 
 GOOGLE_CREDENTIALS = json.loads(
-    os.environ["GOOGLE_CREDENTIALS"].replace("\\n", "\n")
+    os.environ["GOOGLE_CREDENTIALS"]
 )
 
 # ======================
