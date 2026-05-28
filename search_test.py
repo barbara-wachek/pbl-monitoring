@@ -33,7 +33,7 @@ def close_popups(page):
 
 
 # ======================
-# MAIN TEST (URL-BASED SEARCH)
+# MAIN TEST
 # ======================
 def test_search_tokarczuk():
 
@@ -53,25 +53,39 @@ def test_search_tokarczuk():
         page = browser.new_page()
 
         try:
-            # wejście bezpośrednio w wyniki
-            page.goto(url, timeout=30000, wait_until="domcontentloaded")
+            # ======================
+            # REQUEST + HTTP CHECK
+            # ======================
+            response = page.goto(url, timeout=30000, wait_until="domcontentloaded")
 
-            # stabilizacja JS
-            page.wait_for_timeout(3000)
+            if response is None:
+                raise Exception("No response from server")
 
-            # pop-upy (nadal mogą się pojawić na results page)
+            if response.status >= 400:
+                raise Exception(f"HTTP ERROR: {response.status}")
+
+            # ======================
+            # STABILIZATION
+            # ======================
+            page.wait_for_timeout(2500)
+
             close_popups(page)
 
-            # dodatkowe krótkie dociążenie DOM
             page.wait_for_timeout(1500)
 
-            # pobranie treści strony
-            body_text = page.locator("body").inner_text().lower()
+            # ======================
+            # RESULTS CHECK (STRUCTURE, NOT TEXT)
+            # ======================
+            items = page.locator("ul.results__list li")
 
-            # prosty, stabilny warunek
-            results_exist = "tokarczuk" in body_text
+            if items.count() == 0:
+                raise Exception("No results found or results list missing")
 
-            # screenshot (debug / email)
+            results_exist = True
+
+            # ======================
+            # SCREENSHOT
+            # ======================
             page.screenshot(
                 path=screenshot_path,
                 full_page=True
