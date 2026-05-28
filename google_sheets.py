@@ -7,11 +7,15 @@ from config import (
     GOOGLE_SHEET_ID
 )
 
-
+# ======================
+# GOOGLE SCOPES
+# ======================
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
+
+EXPECTED_HEADERS = ["timestamp", "site_ok", "search_ok", "info"]
 
 
 def get_sheet():
@@ -23,40 +27,37 @@ def get_sheet():
 
     client = gspread.authorize(creds)
 
-    sheet = client.open_by_key(
-        GOOGLE_SHEET_ID
-    ).sheet1
+    sheet = client.open_by_key(GOOGLE_SHEET_ID).sheet1
 
     return sheet
-
 
 
 def ensure_headers(sheet):
 
     first_row = sheet.row_values(1)
 
-    if not first_row:
+    if first_row != EXPECTED_HEADERS:
+        sheet.clear()
+        sheet.append_row(EXPECTED_HEADERS)
 
-        sheet.append_row([
-            "timestamp",
-            "site_ok",
-            "search_ok",
-            "info"
-        ])
 
 def append_log(site_ok, search_ok, info):
 
-    timestamp = datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    sheet = get_sheet()
+        sheet = get_sheet()
+        ensure_headers(sheet)
 
-    ensure_headers(sheet)
+        sheet.append_row([
+            timestamp,
+            str(site_ok),
+            str(search_ok),
+            str(info)
+        ])
 
-    sheet.append_row([
-        timestamp,
-        str(site_ok),
-        str(search_ok),
-        str(info)
-    ])
+        print("SHEETS WRITE OK")
+
+    except Exception as e:
+        print("SHEETS ERROR:", e)
+        raise

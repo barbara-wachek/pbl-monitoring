@@ -9,15 +9,17 @@ from mailer import send_email
 from search_test import test_search_tokarczuk
 from google_sheets import append_log
 
-
 print("MONITOR STARTED")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
 logging.basicConfig(
-    filename=os.path.join(LOG_DIR, "monitor.log"),
     level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(os.path.join(LOG_DIR, "monitor.log")),
+        logging.StreamHandler()
+    ]
 )
 
 
@@ -34,24 +36,27 @@ def run():
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # ======================
+    # SITE CHECK
+    # ======================
     ok, info = check_site()
-
-    search_ok = True
-    screenshot_path = None
 
     # ======================
     # SEARCH TEST
     # ======================
+    search_ok = False
     try:
         search_ok, _ = test_search_tokarczuk()
     except Exception as e:
-        search_ok = False
         logging.error(f"Search test failed: {e}")
+        search_ok = False
 
     overall_ok = ok and search_ok
 
+    screenshot_path = None
+
     # ======================
-    # SCREENSHOT (only error)
+    # SCREENSHOT (only on error)
     # ======================
     if not overall_ok:
         try:
@@ -62,20 +67,20 @@ def run():
             screenshot_path = None
 
     # ======================
-    # GOOGLE SHEETS
+    # GOOGLE SHEETS LOG
     # ======================
     try:
         append_log(
-            timestamp,
             overall_ok,
             search_ok,
             str(info)
         )
+        logging.info("Sheets log written successfully")
     except Exception as e:
         logging.error(f"Sheets logging failed: {e}")
 
     # ======================
-    # EMAIL
+    # EMAIL REPORT
     # ======================
     if overall_ok:
         subject = "PBL OK"
@@ -87,7 +92,7 @@ def run():
             f"Info: {info}"
         )
 
-        logging.info("OK - full system healthy")
+        logging.info("System healthy")
         send_email(subject, body)
 
     else:
@@ -100,13 +105,14 @@ def run():
             f"Info: {info}"
         )
 
-        logging.error("ERROR - system failure")
+        logging.error("System failure")
 
         send_email(
             subject,
             body,
-            attachment_path=screenshot_path if screenshot_path else None
+            attachment_path=screenshot_path
         )
+
 
     print("SITE CHECK DONE")
 
