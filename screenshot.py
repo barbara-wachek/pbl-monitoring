@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from playwright.sync_api import sync_playwright
 from config import SCREENSHOT_DIR, URL
 
@@ -9,7 +10,7 @@ def take_screenshot():
     base_dir = os.path.abspath(SCREENSHOT_DIR)
     os.makedirs(base_dir, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"pbl_screenshot_{timestamp}.png"
     path = os.path.join(base_dir, filename)
 
