@@ -10,11 +10,6 @@ from mailer import send_email
 from search_test import test_search_tokarczuk
 from google_sheets import append_log
 
-
-
-
-
-
 print("MONITOR STARTED")
 
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -37,110 +32,109 @@ def check_site():
         return False, str(e)
 
 
-# ======================
-# MAIN RUN (CRASH SAFE)
-# ======================
-def run():
+def build_result(site_ok, search_ok, info, screenshot_path):
+    return {
+        "timestamp": datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:%S"),
+        "site_ok": site_ok,
+        "search_ok": search_ok,
+        "overall_ok": site_ok and search_ok,
+        "info": info,
+        "screenshot": screenshot_path
+    }
 
+
+def run():
     try:
         print("RUN START")
-
-        timestamp = datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:%S")
 
         # ======================
         # SITE CHECK
         # ======================
-        ok, info = check_site()
+        site_ok, info = check_site()
 
         # ======================
         # SEARCH TEST
         # ======================
         search_ok = False
-
         try:
             search_ok, _ = test_search_tokarczuk()
         except Exception as e:
             logging.error(f"Search test failed: {e}")
             search_ok = False
 
-        overall_ok = ok and search_ok
-
+        # ======================
+        # SCREENSHOT ONLY ON ERROR
+        # ======================
         screenshot_path = None
-
-        # ======================
-        # SCREENSHOT (ONLY ON ERROR)
-        # ======================
-        if not overall_ok:
+        if not (site_ok and search_ok):
             try:
                 screenshot_path = take_screenshot()
                 logging.info(f"Screenshot saved: {screenshot_path}")
             except Exception as e:
                 logging.error(f"Screenshot failed: {e}")
-                screenshot_path = None
 
         # ======================
-        # GOOGLE SHEETS (ALWAYS TRY)
+        # UNIFIED RESULT
+        # ======================
+        result = build_result(site_ok, search_ok, info, screenshot_path)
+
+        # ======================
+        # GOOGLE SHEETS
         # ======================
         try:
-            append_log(
-                overall_ok,
-                search_ok,
-                str(info)
-            )
+            append_log(result)
             logging.info("Sheets log written successfully")
-
         except Exception as e:
             logging.error(f"Sheets logging failed: {e}")
 
         # ======================
-        # EMAIL REPORT
+        # EMAIL
         # ======================
         try:
-            if overall_ok:
+            if result["overall_ok"]:
                 subject = "PBL OK"
                 body = (
-                    f"[{timestamp}]\n"
+                    f"[{result['timestamp']}]\n"
                     f"System OK\n"
                     f"Site OK\n"
                     f"Search OK (Tokarczuk)\n"
-                    f"Info: {info}"
+                    f"Info: {result['info']}"
                 )
-
-                logging.info("System healthy")
-                send_email(subject, body)
-
             else:
                 subject = "PBL ERROR"
                 body = (
-                    f"[{timestamp}]\n"
+                    f"[{result['timestamp']}]\n"
                     f"Problem detected\n"
-                    f"Site OK: {ok}\n"
-                    f"Search OK: {search_ok}\n"
-                    f"Info: {info}"
+                    f"Site OK: {result['site_ok']}\n"
+                    f"Search OK: {result['search_ok']}\n"
+                    f"Info: {result['info']}"
                 )
 
-                logging.error("System failure")
+            send_email(
+                subject,
+                body,
+                attachment_path=result["screenshot"]
+            )
 
-                send_email(
-                    subject,
-                    body,
-                    attachment_path=screenshot_path
-                )
+            logging.info("Email sent")
 
         except Exception as e:
             logging.critical(f"Email sending failed: {e}")
 
         print("SITE CHECK DONE")
 
-    # ======================
-    # GLOBAL CRASH HANDLER
-    # ======================
     except Exception as e:
-
         logging.critical(f"CRITICAL CRASH: {e}")
 
         try:
-            append_log(False, False, f"CRASH: {e}")
+            append_log({
+                "timestamp": datetime.now(ZoneInfo("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:%S"),
+                "site_ok": False,
+                "search_ok": False,
+                "overall_ok": False,
+                "info": f"CRASH: {e}",
+                "screenshot": None
+            })
         except Exception:
             pass
 
