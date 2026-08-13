@@ -56,3 +56,8 @@ Raporty są:
 * zapisywane w Google Sheets,
 
 W przypadku błędów system automatycznie tworzy screenshot strony i dołącza go do wiadomości e-mail.
+
+
+--- 
+/* Błędy do poprawienia: 
+- Screenshoty (strona główna zamiast strona, na której odnaleziono błąd np. przy wyszukiwaniu)
