@@ -61,3 +61,5 @@ W przypadku błędów system automatycznie tworzy screenshot strony i dołącza 
 --- 
 /* Błędy do poprawienia: 
 - Screenshoty (strona główna zamiast strona, na której odnaleziono błąd np. przy wyszukiwaniu)
+
+---
